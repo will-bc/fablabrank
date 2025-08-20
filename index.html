@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Makers Ranking</title>
+    <meta
+      name="description"
+      content="Ranking por pontos de medalhas, conquistas por usuário e catálogo. Dados embutidos. Filtros por categoria (ex.: Tecnologia) e grupo (ex.: Eletrônica, Impressão 3D)."
+    />
+    <style>
+      :root {
+        --bg: #0b1020;
+        --panel: #121a35;
+        --muted: #7d8db1;
+        --text: #e9eefc;
+        --accent: #61dafb;
+        --accent2: #8d95ff;
+        --border: #263055;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu,
+          Cantarell, Noto Sans, Helvetica, Arial;
+        background: linear-gradient(180deg, #0b1020, #0f1530 40%, #0b1020);
+        color: var(--text);
+      }
+      a {
+        color: var(--accent);
+      }
+      .wrap {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 24px;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        margin-bottom: 18px;
+      }
+      .avatar {
+        width: 72px;
+        height: 72px;
+        border-radius: 16px;
+        background: linear-gradient(135deg, var(--accent), var(--accent2));
+        display: grid;
+        place-items: center;
+        color: #0b1020;
+        font-weight: 800;
+        font-size: 28px;
+      }
+      h1 {
+        margin: 0;
+        font-size: 28px;
+      }
+      .sub {
+        color: var(--muted);
+        font-size: 14px;
+      }
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 16px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+      @media (min-width: 980px) {
+        .grid {
+          grid-template-columns: 1.1fr 0.9fr;
+        }
+      }
+      .toolbar {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+        margin: 6px 0 14px;
+      }
+      .search {
+        flex: 1;
+        min-width: 180px;
+      }
+      input[type='search'],
+      select {
+        width: 100%;
+        background: #0b122a;
+        color: var(--text);
+        border: 1px solid var(--border);
+        padding: 10px 12px;
+        border-radius: 10px;
+        outline: none;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        padding: 12px 10px;
+        border-bottom: 1px solid #1d2749;
+      }
+      th {
+        font-size: 13px;
+        color: var(--muted);
+        text-align: left;
+        user-select: none;
+        cursor: pointer;
+      }
+      tr:hover td {
+        background: #0e1630;
+      }
+      .rank {
+        width: 54px;
+        text-align: right;
+      }
+      .score {
+        font-weight: 700;
+      }
+      .medals-toolbar {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+        margin: 6px 0 12px;
+      }
+      .medals-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 14px;
+      }
+      .card {
+        background: #0b122a;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 14px;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+      .mini {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        background: #0e1734;
+        display: grid;
+        place-items: center;
+      }
+      .name {
+        font-weight: 600;
+      }
+      .medal-icons {
+        display: flex;
+        gap: 10px;
+        margin-top: 4px;
+        flex-wrap: wrap;
+      }
+      .chip {
+        border: 1px solid var(--border);
+        background: #0b122a;
+        color: var(--muted);
+        padding: 8px 10px;
+        border-radius: 999px;
+        font-size: 13px;
+      }
+      img.medal-icon {
+        width: 22px;
+        height: 22px;
+        vertical-align: middle;
+        border-radius: 4px;
+        box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1);
+      }
+      a.medal-link {
+        display: inline-grid;
+        place-items: center;
+      }
+      .group-title {
+        margin: 8px 0 6px;
+        font-weight: 700;
+        color: #bfc9f3;
+      }
+      .category-title {
+        margin: 0 0 8px;
+        font-weight: 800;
+        color: #dbe3ff;
+        font-size: 16px;
+      }
+
+      /* Catálogo em colunas (Categoria → Grupos) */
+      #medalCatalog {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 16px;
+      }
+      .catalog-col {
+        background: #0b122a;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 12px;
+      }
+      .catalog-col .medals-grid {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <div class="avatar" id="avatarInitials">CW</div>
+        <div>
+          <h1 id="pageTitle">Makers Ranking</h1>
+          <div class="sub" id="subtitle"></div>
+        </div>
+      </header>
+
+      <div class="grid">
+        <!-- Leaderboard -->
+        <section class="panel">
+          <h2 style="margin: 0 0 6px">Ranking de Pontuação</h2>
+          <p class="sub" style="margin: 0 0 12px">
+            Clique nos cabeçalhos para ordenar. Use a busca para filtrar por
+            nome.
+          </p>
+          <div class="toolbar">
+            <div class="search">
+              <input id="search" type="search" placeholder="Buscar por nome…" />
+            </div>
+            <div style="width: 180px">
+              <select id="minMedals">
+                <option value="0">Min. medalhas: 0</option>
+                <option value="1">Min. medalhas: 1</option>
+                <option value="2">Min. medalhas: 2</option>
+                <option value="3">Min. medalhas: 3</option>
+              </select>
+            </div>
+            <div style="width: 200px">
+              <select id="categoryFilter"></select>
+            </div>
+            <div style="width: 220px">
+              <select id="groupFilter"></select>
+            </div>
+          </div>
+          <div style="overflow: auto; border-radius: 12px">
+            <table id="leaderboard">
+              <thead>
+                <tr>
+                  <th class="rank">#</th>
+                  <th data-key="name">Nome</th>
+                  <th data-key="medalScore">Pontos</th>
+                  <th>Medalhas</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Conquistas por Usuário -->
+        <section class="panel">
+          <h2 style="margin: 0 0 6px">Conquistas por Usuário</h2>
+          <div class="medals-toolbar">
+            <div style="min-width: 220px">
+              <select id="medalFilter"></select>
+            </div>
+            <div style="min-width: 200px">
+              <select id="categoryFilter2"></select>
+            </div>
+            <div style="min-width: 220px">
+              <select id="groupFilter2"></select>
+            </div>
+            <div style="min-width: 220px">
+              <select id="sortMedals">
+                <option value="name">Ordenar: Nome</option>
+                <option value="medalScore">Ordenar: Pontos (medalhas)</option>
+                <option value="total">Ordenar: Total de Medalhas</option>
+              </select>
+            </div>
+          </div>
+          <div class="medals-grid" id="medalsGrid"></div>
+        </section>
+      </div>
+
+      <!-- Catálogo de Medalhas -->
+      <section class="panel" style="margin-top: 16px">
+        <h2>Catálogo de Medalhas</h2>
+        <p class="sub">
+          Consulte todas as
+          <a
+            href="https://github.com/will-bc/arvore_de_habilidades/tree/main"
+            target="_blank"
+            rel="noopener noreferrer"
+            >Árvores de habilidades</a
+          >.
+        </p>
+        <div id="medalCatalog"></div>
+      </section>
+    </div>
+
+    <!-- ===== DADOS INCORPORADOS (edite aqui) ===== -->
+    <script>
+      const DATA = {
+        profileInitials: 'CS',
+        title: 'Makers Ranking',
+        subtitle:
+          'Leaderboard de makers do Laboratório de Design e Fabricação Digital',
+        medalTypes: [
+          {
+            id: 'plante',
+            name: 'Plante o futuro',
+            icon: 'images/badge-plantar.png',
+            score: 50,
+            url: '',
+            category: 'Biolab',
+            group: 'Foresight'
+          },
+          {
+            id: '1cultivo',
+            name: '1º cultivo',
+            icon: 'images/1cultivo.png',
+            score: 5,
+            url: 'https://github.com/will-bc/arvore_de_habilidades/blob/main/kombucha/protocolos/cultivo.jpeg?raw=true',
+            category: 'Biolab',
+            group: 'Engenharia & Ciência Microbiana'
+          },
+          {
+            id: 'desidratacao',
+            name: 'Desidratação',
+            icon: 'images/desidratacao.png',
+            score: 5,
+            url: '',
+            category: 'Biolab',
+            group: 'Biofabricação'
+          },
+          {
+            id: '1impressao',
+            name: 'Coloque sua 1º impressão 3D',
+            icon: 'images/1impressao.png',
+            score: 5,
+            url: '',
+            category: 'Impressão 3D',
+            group: 'FDM'
+          },
+          {
+            id: '1ABS',
+            name: '1º impressão ABS',
+            icon: 'images/1ABS.png',
+            score: 5,
+            url: '',
+            category: 'Impressão 3D',
+            group: 'FDM'
+          },
+          {
+            id: 'familia',
+            name: 'Imprima um presente para um amigo ou família',
+            icon: 'images/familia.png',
+            score: 10,
+            url: '',
+            category: 'Impressão 3D',
+            group: 'Comunidade'
+          },
+          {
+            id: 'led',
+            name: 'Hello LED',
+            icon: 'images/led.png',
+            score: 5,
+            url: '',
+            category: 'Eletrônica',
+            group: 'Circuitos'
+          }
+        ],
+        users: [
+          {
+            id: 1,
+            name: '🚨 Willian Barela Costa',
+            medals: [
+              { type: 'plante', count: 1 },
+              { type: '1cultivo', count: 1 },
+              { type: 'desidratacao', count: 1 },
+              { type: '1impressao', count: 1 },
+              { type: '1ABS', count: 1 },
+              { type: 'led', count: 1 }
+            ]
+          },
+          {
+            id: 2,
+            name: 'Camila Lavieri',
+            medals: [
+              { type: '1cultivo', count: 1 },
+              { type: 'familia', count: 1 },
+              { type: '1impressao', count: 1 },
+              { type: '1ABS', count: 1 },
+              { type: 'led', count: 1 }
+            ]
+          },
+          {
+            id: 3,
+            name: 'Matheus Ferreira',
+            medals: [
+              { type: '1cultivo', count: 1 },
+              { type: '1impressao', count: 1 },
+              { type: '1ABS', count: 1 },
+              { type: 'led', count: 1 }
+            ]
+          },
+          { id: 4, name: 'André Ozawa', medals: [{ type: 'plante', count: 1 }] }
+        ]
+      }
+    </script>
+
+    <!-- ===== LÓGICA DA APLICAÇÃO ===== -->
+    <script>
+      // Helpers
+      const linkIcon = (src, alt, href) =>
+        href
+          ? `<a class="medal-link" href="${href}" target="_blank" rel="noopener noreferrer"><img class="medal-icon" src="${src}" alt="${alt}" onerror="this.style.display='none'"></a>`
+          : `<img class="medal-icon" src="${src}" alt="${alt}" onerror="this.style.display='none'">`
+      const fmt = n => new Intl.NumberFormat('pt-BR').format(n)
+      const byId = id => (DATA.medalTypes || []).find(m => m.id === id)
+      function medalScoreOf(user) {
+        if (!user.medals) return 0
+        return user.medals.reduce((sum, m) => {
+          const mt = byId(m.type)
+          const per = mt && typeof mt.score === 'number' ? mt.score : 0
+          return sum + per * (m.count || 0)
+        }, 0)
+      }
+
+      // Estado + elementos
+      const state = {
+        sortKey: 'medalScore',
+        sortDir: 'desc',
+        search: '',
+        minMedals: 0,
+        medalFilter: 'all',
+        sortMedals: 'name',
+        category: 'all',
+        group: 'all'
+      }
+      const el = {
+        title: document.getElementById('pageTitle'),
+        subtitle: document.getElementById('subtitle'),
+        avatar: document.getElementById('avatarInitials'),
+        tbody: document.querySelector('#leaderboard tbody'),
+        ths: [...document.querySelectorAll('th[data-key]')],
+        search: document.getElementById('search'),
+        minMedals: document.getElementById('minMedals'),
+        medalFilter: document.getElementById('medalFilter'),
+        sortMedals: document.getElementById('sortMedals'),
+        categoryFilter: document.getElementById('categoryFilter'),
+        groupFilter: document.getElementById('groupFilter'),
+        categoryFilter2: document.getElementById('categoryFilter2'),
+        groupFilter2: document.getElementById('groupFilter2'),
+        medalsGrid: document.getElementById('medalsGrid'),
+        medalCatalog: document.getElementById('medalCatalog')
+      }
+
+      // Meta / opções
+      function buildOptions() {
+        // Medal type select
+        const optsType = [
+          { value: 'all', label: 'Filtrar: Todas' },
+          ...DATA.medalTypes.map(m => ({ value: m.id, label: m.name }))
+        ]
+        el.medalFilter.innerHTML = optsType
+          .map(o => `<option value="${o.value}">${o.label}</option>`)
+          .join('')
+
+        // Categorias
+        const categories = Array.from(
+          new Set((DATA.medalTypes || []).map(m => m.category || 'Tecnologia'))
+        ).sort((a, b) => a.localeCompare(b))
+        const optsCat = [
+          { value: 'all', label: 'Todas as categorias' },
+          ...categories.map(c => ({ value: c, label: c }))
+        ]
+        const htmlCat = optsCat
+          .map(o => `<option value="${o.value}">${o.label}</option>`)
+          .join('')
+        el.categoryFilter.innerHTML = htmlCat
+        el.categoryFilter2.innerHTML = htmlCat
+
+        // Grupos (dependentes da categoria)
+        populateGroups()
+      }
+
+      function populateGroups() {
+        const activeCat = state.category
+        const groups = Array.from(
+          new Set(
+            (DATA.medalTypes || [])
+              .filter(m =>
+                activeCat === 'all'
+                  ? true
+                  : (m.category || 'Tecnologia') === activeCat
+              )
+              .map(m => m.group)
+              .filter(Boolean)
+          )
+        ).sort((a, b) => a.localeCompare(b))
+        const optsGroup = [
+          { value: 'all', label: 'Todos os grupos' },
+          ...groups.map(g => ({ value: g, label: g }))
+        ]
+        const htmlGroup = optsGroup
+          .map(o => `<option value="${o.value}">${o.label}</option>`)
+          .join('')
+        el.groupFilter.innerHTML = htmlGroup
+        el.groupFilter2.innerHTML = htmlGroup
+
+        // Se o grupo anterior não existir na nova categoria, reseta
+        if (state.group !== 'all' && !groups.includes(state.group)) {
+          state.group = 'all'
+          el.groupFilter.value = 'all'
+          el.groupFilter2.value = 'all'
+        }
+      }
+
+      function initMeta() {
+        el.title.textContent = DATA.title || 'Makers Ranking'
+        el.subtitle.textContent = DATA.subtitle || ''
+        el.avatar.textContent = DATA.profileInitials || '??'
+        buildOptions()
+      }
+
+      // Filtros/ordenação
+      function typeMatchesFilters(mt) {
+        const cat = mt.category || 'Tecnologia'
+        const inCat = state.category === 'all' || cat === state.category
+        const inGrp = state.group === 'all' || mt.group === state.group
+        return inCat && inGrp
+      }
+
+      function applyFilters(list) {
+        const q = state.search.trim().toLowerCase()
+        let arr = list.filter(u => u.name.toLowerCase().includes(q))
+        if (state.minMedals > 0) {
+          arr = arr.filter(
+            u =>
+              (u.medals || []).reduce((s, m) => s + m.count, 0) >=
+              state.minMedals
+          )
+        }
+        // Categoria/Grupo por usuário: precisa ter pelo menos uma medalha que atenda os filtros
+        if (state.category !== 'all' || state.group !== 'all') {
+          arr = arr.filter(u =>
+            (u.medals || []).some(m => {
+              const mt = byId(m.type)
+              return mt && typeMatchesFilters(mt) && m.count > 0
+            })
+          )
+        }
+        // Filtro por tipo específico de medalha
+        if (state.medalFilter !== 'all') {
+          arr = arr.filter(u =>
+            (u.medals || []).some(
+              m => m.type === state.medalFilter && m.count > 0
+            )
+          )
+        }
+        return arr
+      }
+
+      function sortList(list) {
+        const dir = state.sortDir === 'asc' ? 1 : -1
+        const key = state.sortKey
+        return [...list].sort((a, b) => {
+          let va, vb
+          if (key === 'name') {
+            va = a.name.toLowerCase()
+            vb = b.name.toLowerCase()
+          } else {
+            va = medalScoreOf(a)
+            vb = medalScoreOf(b)
+          }
+          if (va < vb) return -1 * dir
+          if (va > vb) return 1 * dir
+          return 0
+        })
+      }
+
+      // Render: tabela principal (ranking)
+      function renderTable() {
+        const rows = sortList(applyFilters(DATA.users))
+        el.tbody.innerHTML = rows
+          .map((u, i) => {
+            const icons = (u.medals || [])
+              .filter(m => {
+                const mt = byId(m.type)
+                return mt && typeMatchesFilters(mt) && m.count > 0
+              })
+              .map(m => {
+                const mt = byId(m.type)
+                // apenas o ícone (sem nome e sem contagem)
+                return linkIcon(mt.icon, mt.name, mt.url)
+              })
+              .join(' ')
+
+            return `<tr>
+      <td class="rank">${i + 1}</td>
+      <td>${u.name}</td>
+      <td class="score">${fmt(medalScoreOf(u))}</td>
+      <td>${icons || '<span class="chip">Sem medalhas</span>'}</td>
+    </tr>`
+          })
+          .join('')
+      }
+
+      // Render: conquistas por usuário
+      function renderMedals() {
+        let data = DATA.users.map(u => {
+          const totals = Object.fromEntries(
+            DATA.medalTypes.map(mt => [mt.id, 0])
+          )
+          ;(u.medals || []).forEach(m => {
+            totals[m.type] = (totals[m.type] || 0) + m.count
+          })
+          return { ...u, totals }
+        })
+
+        // Filtra por medal type escolhido
+        if (state.medalFilter !== 'all') {
+          data = data.filter(u => (u.totals[state.medalFilter] || 0) > 0)
+        }
+        // Filtra por categoria/grupo
+        if (state.category !== 'all' || state.group !== 'all') {
+          const allowed = new Set(
+            (DATA.medalTypes || [])
+              .filter(mt => typeMatchesFilters(mt))
+              .map(mt => mt.id)
+          )
+          data = data.filter(u =>
+            Object.entries(u.totals).some(([k, v]) => allowed.has(k) && v > 0)
+          )
+        }
+
+        // Ordenação
+        data.sort((a, b) => {
+          if (state.sortMedals === 'name') return a.name.localeCompare(b.name)
+          if (state.sortMedals === 'medalScore')
+            return medalScoreOf(b) - medalScoreOf(a)
+          const ta = Object.values(a.totals).reduce((s, v) => s + v, 0)
+          const tb = Object.values(b.totals).reduce((s, v) => s + v, 0)
+          return tb - ta
+        })
+
+        el.medalsGrid.innerHTML = data
+          .map(u => {
+            const icons =
+              DATA.medalTypes
+                .filter(mt => typeMatchesFilters(mt))
+                .map(mt => {
+                  const n = u.totals[mt.id] || 0
+                  if (!n) return ''
+                  // aqui mantemos apenas os ícones clicáveis (sem contagem visual)
+                  return linkIcon(mt.icon, mt.name, mt.url)
+                })
+                .join('') || '<span class="chip">Sem medalhas</span>'
+
+            return `<div class="card">
+            <div class="mini">${u.name
+              .split(' ')
+              .map(s => s[0])
+              .slice(0, 2)
+              .join('')}</div>
+            <div style="flex:1">
+              <div class="name">${u.name}</div>
+              <div class="sub">Total: ${fmt(medalScoreOf(u))} pts</div>
+              <div class="medal-icons">${icons}</div>
+            </div>
+          </div>`
+          })
+          .join('')
+      }
+
+      // Render: catálogo de medalhas (TODAS) em colunas por categoria → grupos
+      function renderCatalog() {
+        const byCat = {}
+        for (const mt of DATA.medalTypes) {
+          const c = mt.category || 'Tecnologia'
+          ;(byCat[c] ||= []).push(mt)
+        }
+
+        const catNames = Object.keys(byCat).sort((a, b) => a.localeCompare(b))
+        const cols = catNames.map(c => {
+          const byGroup = {}
+          for (const mt of byCat[c]) {
+            ;(byGroup[mt.group || 'Outros'] ||= []).push(mt)
+          }
+
+          const groupNames = Object.keys(byGroup).sort((a, b) =>
+            a.localeCompare(b)
+          )
+          const groupBlocks = groupNames
+            .map(g => {
+              const cards = byGroup[g]
+                .map(mt => {
+                  const pts =
+                    typeof mt.score === 'number' ? `${mt.score} pts` : ''
+                  const icon = linkIcon(mt.icon, mt.name, mt.url)
+                  return `
+                <div class="card">
+                  <div class="mini">${icon}</div>
+                  <div style="flex:1">
+                    <div class="name">${mt.name}</div>
+                    <div class="sub">${pts}</div>
+                  </div>
+                </div>`
+                })
+                .join('')
+              return `<div class="group-title">${g}</div>
+                    <div class="medals-grid">${cards}</div>`
+            })
+            .join('')
+
+          return `<div class="catalog-col">
+                    <div class="category-title">${c}</div>
+                    ${groupBlocks}
+                  </div>`
+        })
+
+        el.medalCatalog.innerHTML = cols.join('')
+      }
+
+      // Eventos
+      el.ths.forEach(th =>
+        th.addEventListener('click', () => {
+          const key = th.dataset.key
+          if (state.sortKey === key) {
+            state.sortDir = state.sortDir === 'asc' ? 'desc' : 'asc'
+          } else {
+            state.sortKey = key
+            state.sortDir = 'desc'
+          }
+          renderTable()
+        })
+      )
+      el.search.addEventListener('input', e => {
+        state.search = e.target.value
+        renderTable()
+      })
+      el.minMedals.addEventListener('change', e => {
+        state.minMedals = +e.target.value
+        renderTable()
+      })
+
+      // Filtros sincronizados
+      el.medalFilter.addEventListener('change', e => {
+        state.medalFilter = e.target.value
+        renderMedals()
+      })
+      el.categoryFilter.addEventListener('change', e => {
+        state.category = e.target.value
+        el.categoryFilter2.value = state.category
+        populateGroups()
+        renderTable()
+        renderMedals()
+      })
+      el.groupFilter.addEventListener('change', e => {
+        state.group = e.target.value
+        el.groupFilter2.value = state.group
+        renderTable()
+        renderMedals()
+      })
+      el.categoryFilter2.addEventListener('change', e => {
+        state.category = e.target.value
+        el.categoryFilter.value = state.category
+        populateGroups()
+        renderTable()
+        renderMedals()
+      })
+      el.groupFilter2.addEventListener('change', e => {
+        state.group = e.target.value
+        el.groupFilter.value = state.group
+        renderTable()
+        renderMedals()
+      })
+
+      // Init
+      initMeta()
+      renderTable()
+      renderMedals()
+      renderCatalog()
+    </script>
+  </body>
+</html>
